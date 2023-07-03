@@ -1,25 +1,22 @@
 import { useState } from 'react';
 
-const Dropdown = ({data}) => {
+const Dropdown = ({data,  onChange}) => {
   const [selectedOption, setSelectedOption] = useState('');
 
   const handleSelectChange = (event) => {
     setSelectedOption(event.target.value);
   };
 
-  // console.log(data)
-
   return (
     <div className="relative">
       <select
-        value={selectedOption}
-        onChange={handleSelectChange}
+        onChange={onChange}
         className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded shadow leading-tight focus:outline-none focus:border-blue-500"
       >
         <option value="all">All</option>
-        {data.map((monthAndYear, index) => (
-        <option key={index} value={monthAndYear}>
-          {monthAndYear}
+        {data.map((item, index) => (
+        <option key={index} value={item}>
+          {item}
         </option>
       ))}
       </select>

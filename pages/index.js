@@ -17,14 +17,16 @@ function Home() {
   const [accounts,setAccounts] = useState([]);
   const [transactions,setTransactions] = useState([]);
   const [componentLoading, setComponentLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState('');
 
   useEffect(() => {
     loadAccounts();
     loadTransactions();
-  }, []);
+  }, [selectedMonth,selectedAccount]);
 
-
-  const loadAccounts = async (e) =>{
+  
+  const loadAccounts = async () =>{
     let res = await fetch("api/accounts", {
       method: "GET"
     });
@@ -33,9 +35,17 @@ function Home() {
       throw new Error('Failed to fetch accounts');
     }
     setAccounts(data.accounts)
+
+    // if (selectedAccount && selectedAccount !== 'All')
+    // {
+    //   const filteredAccounts = data.accounts.filter((account) => account.name === selectedAccount);
+    //   setAccounts(filteredAccounts)
+    // }else{
+    //   setAccounts(data.accounts)
+    // }
   }
 
-  const loadTransactions = async (e) =>{
+  const loadTransactions = async () =>{
     let res = await fetch("api/transactions", {
       method: "GET"
     });
@@ -47,12 +57,20 @@ function Home() {
     setComponentLoading(false)
   }
 
+  const handleMonthChange = (event) => {
+    setSelectedMonth(event.target.value);
+  };
+
+  const handleAccountChange = (event) => {
+    setSelectedAccount(event.target.value);
+  };
+
   const getMonthsAndYears = () => {
     const uniqueMonthsAndYears = new Set();
   
     transactions.forEach((transaction) => {
       const date = new Date(transaction.date);
-      const monthYear = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+      const monthYear = date.toLocaleString('default', { month: 'long', year: 'numeric' });
       uniqueMonthsAndYears.add(monthYear);
     });
   
@@ -65,16 +83,16 @@ function Home() {
   
     return sortedMonthsAndYears;
   };
-  
 
   const getAccountNames = () => {
     return accounts.map(account => account.name);
   }
 
   const getTotalIncome = () => {
+    let filteredTransactions = filterTransactions()
     let totalIncome = 0;
 
-  transactions.forEach((transaction) => {
+    filteredTransactions.forEach((transaction) => {
     if (transaction.type === "Income") {
       totalIncome += transaction.amount;
     }
@@ -84,8 +102,10 @@ function Home() {
   }
 
   const getTotalExpense= () => {
+    let filteredTransactions = filterTransactions()
+
     let totalExpense = 0;
-  transactions.forEach((transaction) => {
+    filteredTransactions.forEach((transaction) => {
     if (transaction.type === "Expense") {
       totalExpense += transaction.amount;
     }
@@ -94,8 +114,10 @@ function Home() {
   }
 
   const getTotalTransfers = () => {
+    let filteredTransactions = filterTransactions()
+
     let totalTransfers = 0;
-  transactions.forEach((transaction) => {
+    filteredTransactions.forEach((transaction) => {
     if (transaction.type === "Transfer") {
       totalTransfers += transaction.amount;
     }
@@ -106,6 +128,25 @@ function Home() {
   const getTotalAmount = () => {
     return 0;
   }
+
+  const filterAccounts = () =>{
+    if(!selectedAccount || selectedAccount === 'all') return accounts
+    const filteredAccounts = accounts.filter((account) => account.name === selectedAccount);
+    return filteredAccounts
+  }
+
+  const filterTransactions = () => {
+    const filteredTransactions = transactions.filter((transaction) => {
+      const date = new Date(transaction.date);
+      const monthYear = date.toLocaleString('en-us', { month: 'long', year: 'numeric' });
+      const isMonthYearMatch = (!selectedMonth || selectedMonth === 'all') ? true : selectedMonth === monthYear;
+      const isAccountMatch = (!selectedAccount || selectedAccount === 'all') ? true : transaction.account === selectedAccount;
+      return isMonthYearMatch && isAccountMatch;
+    });
+  
+    return filteredTransactions;
+  }
+  
   
   if (componentLoading) {
     return <div>Loading...</div>;
@@ -119,12 +160,12 @@ function Home() {
           <h3 className='font-bold'>Filters</h3>
           <div className='mt-2'>
             <div className='text-gray-600 font-semibold'>Period</div>
-            <Dropdown data={getMonthsAndYears()} />
+            <Dropdown data={getMonthsAndYears()} onChange={handleMonthChange} />
           </div>
 
           <div className='mt-2'>
             <div className='text-gray-600 font-semibold'>Account</div>
-            <Dropdown data={getAccountNames()} />
+            <Dropdown data={getAccountNames()} onChange={handleAccountChange}/>
           </div>
 
         </div>
@@ -148,7 +189,7 @@ function Home() {
             <h3 className='px-2 font-bold'>Balances</h3>
             <div className='flex'>
               {
-                accounts.map(({name, balance}) => (
+                filterAccounts().map(({name, balance}) => (
                   <BalanceTile accountName={name} balance={balance} key={name} />
                 ))
               }

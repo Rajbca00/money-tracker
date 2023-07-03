@@ -6,7 +6,7 @@ export default withApiAuthRequired(async function handler(req, res) {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DBNAME);
     const { user } = await getSession(req, res);
-    console.log(user)
+    
     switch (req.method) {
         case "POST":
             let bodyObject = JSON.parse(req.body);
